@@ -1,0 +1,98 @@
+id: 6172fc9a-dcb5-452f-9f5b-3ae8168b595b
+name: GraphQLScoper
+function: VIEW_FILTER
+location: PROXY_HTTP_HISTORY
+source: |2
+     /**
+     * Scope out the GraphQL operations that have already been tested.
+     *
+     * @author Bineeg
+     **/
+
+
+    /**
+    * Specify the hosts or URL substrings that must be included (MUST be present).
+    * Update the URLs to match the in-scope targets.
+    **/
+
+    var IN_SCOPE_URLS = new String[] {
+        "<domain>"
+    };
+
+
+    /**
+    * Specify the hosts or URL substrings that should be marked as out of scope.
+    * Update the URLs accordingly under OUT_SCOPE_URLS.
+    **/
+    var OUT_SCOPE_URLS = new String[] {
+         "<domain>"
+    };
+
+
+    // Define the file extensions to EXCLUDE/HIDE
+    var EXCLUDED_EXTENSIONS = new String[] {
+        ".png", 
+        ".ico", 
+        ".svg", 
+        ".jpg", 
+        ".jpeg", 
+        ".css", 
+        ".js",
+    	  ".ttf"
+    };
+
+    // Define the GraphQL operations you want to EXCLUDE/HIDE 
+    var EXCLUDED_OPERATIONS = new String[] {
+        	 "\"operationName\":\"Example\"" 
+    };
+
+    var request = requestResponse.finalRequest();
+    var urlString = request.url();
+    var isExcluded = false; 
+
+    var isIncludedUrl = false;
+    for (var i = 0; i < IN_SCOPE_URLS.length; i++) {
+        if (urlString.contains(IN_SCOPE_URLS[i])) {
+            isIncludedUrl = true; 
+            break; 
+        }
+    }
+    if (!isIncludedUrl) {
+        return false; 
+    }
+
+    for (var i = 0; i < OUT_SCOPE_URLS.length; i++) {
+        if (urlString.contains(OUT_SCOPE_URLS[i])) {
+            isExcluded = true; 
+            break; 
+        }
+    }
+    if (isExcluded) {
+        return false; 
+    }
+
+    for (var i = 0; i < EXCLUDED_EXTENSIONS.length; i++) {
+        if (urlString.toLowerCase().endsWith(EXCLUDED_EXTENSIONS[i])) {
+            isExcluded = true; 
+            break;
+        }
+    }
+    if (isExcluded) {
+        return false; 
+    }
+
+
+    var isExcludedOp = false;
+    if (request.method().equals("POST") && request.body().length() > 0) {
+        
+        var requestBody = request.body().toString();
+
+        for (var i = 0; i < EXCLUDED_OPERATIONS.length; i++) {
+            if (requestBody.contains(EXCLUDED_OPERATIONS[i])) {
+                isExcludedOp = true; 
+                break; 
+            }
+        }
+    }
+
+    return !isExcludedOp;
